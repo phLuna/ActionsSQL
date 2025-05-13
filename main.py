@@ -1,44 +1,53 @@
-from sqlalchemy import Column, Integer, String, DateTime, create_engine
+from toolbox.db import adicionar_acao, buscar_acao, listar_acoes, excluir_acao
+
+from fastapi import FastAPI, HTTPException
+from sqlalchemy import Column, Integer, String, DateTime, create_engine, func
 from sqlalchemy.orm import declarative_base, sessionmaker
 from datetime import datetime
 
-# Define a base ORM
+# Configurações do banco de dados
+DATABASE_URL = 'sqlite:///banco_acoes.db'
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
-# Tabela de ações
+# Modelo
 class Acao(Base):
     __tablename__ = 'acoes'
-
     id = Column(Integer, primary_key=True)
-    ticket = Column(String, nullable=False)
-    data = Column(DateTime, default=datetime.utcnow)
+    ticker = Column(String, nullable=False)
+    data_adicao = Column(DateTime, default=datetime.utcnow)
 
-    def __repr__(self):
-        return f"<Acao(ticket='{self.ticket}', data='{self.data}')>"
+Base.metadata.create_all(bind=engine)
 
-# Conexão com o banco (SQLite local)
-engine = create_engine('sqlite:///banco_acoes.db', echo=False)
-Base.metadata.create_all(engine)
+# App FastAPI
+app = FastAPI()
 
-# Criar sessão
-Session = sessionmaker(bind=engine)
-session = Session()
+# Rotas
 
-# Função para adicionar uma ação
-def adicionar_acao(ticket: str):
-    acao = Acao(ticket=ticket)
-    session.add(acao)
-    session.commit()
-    print(f"Ação '{ticket}' adicionada com sucesso!")
+from fastapi import FastAPI, HTTPException
+from toolbox.db import adicionar_acao, buscar_acao, listar_acoes, excluir_acao
 
-# Função para listar todas as ações
-def listar_acoes():
-    acoes = session.query(Acao).all()
-    for acao in acoes:
-        print(acao)
+app = FastAPI()
 
-# Exemplo de uso
-if __name__ == '__main__':
-    adicionar_acao("PETR4")
-    adicionar_acao("VALE3")
-    listar_acoes()
+@app.post("/acoes/")
+def adicionar_acao_api(ticker: str):
+    return adicionar_acao(ticker)
+
+@app.get("/acoes/")
+def listar_acoes_api():
+    return listar_acoes()
+
+@app.get("/acoes/{ticker}")
+def buscar_acao_api(ticker: str):
+    resultado = buscar_acao(ticker)
+    if resultado is None:
+        raise HTTPException(status_code=404, detail="Ação não encontrada.")
+    return resultado
+
+@app.delete("/acoes/{ticker}")
+def excluir_acao_api(ticker: str):
+    sucesso = excluir_acao(ticker)
+    if not sucesso:
+        raise HTTPException(status_code=404, detail="Ação não encontrada.")
+    return {"mensagem": f"Ação '{ticker}' excluída com sucesso."}

@@ -5,31 +5,36 @@ from datetime import datetime
 # Define a base ORM
 Base = declarative_base()
 
+# Configurações do banco de dados
+DATABASE_URL = 'sqlite:///banco_acoes.db'
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+Base = declarative_base()
+session = SessionLocal()
+
 #Modelo da tabela.
 class Acao(Base):
     __tablename__ = 'acoes'
 
     id = Column(Integer, primary_key=True)
     ticker = Column(String, nullable=False)
+    quantidade = Column(Integer, nullable=False)
     data_adicao = Column(DateTime, default=datetime.utcnow)
 
     def __repr__(self):
         return f"<Acao(ticker='{self.ticker}', data_adicao='{self.data_adicao}')>"
-
-#Conectar ao banco.
-engine = create_engine('sqlite:///banco_acoes.db', echo=False)
-Base.metadata.create_all(engine)
-
-#Interagir com o banco.
-Session = sessionmaker(bind=engine)
-session = Session()
+    
+# Criar a tabela (depois de definir o modelo)
+Base.metadata.create_all(bind=engine)
 
 
-def adicionar_acao(ticker: str):
-    acao = Acao(ticker=ticker)
+def inserir_acao(ticker: str, quantidade: int):
+    session = SessionLocal()
+    acao = Acao(ticker=ticker, quantidade=quantidade)
     session.add(acao)
     session.commit()
-    print(f"Ação '{ticker}' adicionada com sucesso!")
+    session.close()
+    print(f"{quantidade} de ações '{ticker}' adicionada(s) com sucesso!")
 
 
 def buscar_acao(ticker: str):

@@ -34,23 +34,11 @@ def inserir_acao(ticker: str, quantidade: int):
     session.add(acao)
     session.commit()
     session.close()
-    print(f"{quantidade} de ações '{ticker}' adicionada(s) com sucesso!")
+    response = f"{quantidade} de ações '{ticker}' adicionada(s) com sucesso!"
+    return response
 
 
-def buscar_acao(ticker: str):
-    """Busca uma ação específica pelo ticker e retorna um dicionário com os dados."""
-    acao = session.query(Acao).filter_by(ticker=ticker).first()
-
-    if acao is None:
-        return None
-
-    return {
-        "ticker": acao.ticker,
-        "data_adicao": acao.data_adicao.strftime('%Y-%m-%d %H:%M:%S')
-    }
-
-
-def listar_acoes():
+def ver_acoes():
     """Lista os tickers únicos com a quantidade de ocorrências e a data da última adição."""
     resultados = (
         session.query(
@@ -73,8 +61,24 @@ def listar_acoes():
     ]
 
 
+def procurar_acao(ticker: str):
+    """Busca uma ação específica pelo ticker e retorna um dicionário com os dados."""
+    acoes = session.query(Acao).filter_by(ticker=ticker).all()
 
-def excluir_acao(ticker: str):
+    if not acoes:
+        return None
+
+    quantidade_total = sum(acao.quantidade for acao in acoes)
+
+    response = {
+        "ticker": ticker,
+        "quantidade": quantidade_total,
+        "primeira_adicao": acoes[0].data_adicao.strftime('%Y-%m-%d %H:%M:%S')
+    }
+    return response
+
+
+def deletar_acao(ticker: str):
     """Exclui a primeira ocorrência de uma ação com o ticker informado."""
     acao = session.query(Acao).filter_by(ticker=ticker).first()
 

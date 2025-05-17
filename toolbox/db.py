@@ -31,7 +31,8 @@ Base.metadata.create_all(bind=engine)
 
 
 def formatar_ticker(ticker: str) -> str:
-    """Formata os tickers das ações para o formato brasileiro, caso forem."""
+    """Formata os tickers das ações
+    para o formato brasileiro, caso forem."""
     if ticker.endswith(".SA"):
         return ticker
     if ticker.isalnum():
@@ -39,13 +40,15 @@ def formatar_ticker(ticker: str) -> str:
     return ticker
 
 def obter_preco_atual(ticker: str) -> float:
+    """Consulta na API do Yahoo o
+    preço atual da ação."""
     try:
         ticker_formatado = formatar_ticker(ticker)
         acao = yf.Ticker(ticker_formatado)
         preco = acao.history(period="1d")["Close"].iloc[-1]
         return preco
     except Exception as e:
-        return 0.0
+        return 0.1
 
 
 def inserir_acao(ticker: str, quantidade: int):
@@ -53,16 +56,12 @@ def inserir_acao(ticker: str, quantidade: int):
     preco = obter_preco_atual(ticker)
     valor_investido = round(preco * quantidade, 2)
 
-    # Verifica se já existe uma entrada com esse ticker
     acao_existente = session.query(Acao).filter_by(ticker=ticker).first()
-
     if acao_existente:
-        # Atualiza quantidade e valor investido
         acao_existente.quantidade += quantidade
         acao_existente.investido += valor_investido
         response = f"{quantidade} unidade(s) adicionada(s) à ação '{ticker}' existente. Investido: R$ {valor_investido:.2f}"
     else:
-        # Cria uma nova entrada com quantidade e valor investido
         nova_acao = Acao(
             ticker=ticker,
             quantidade=quantidade,

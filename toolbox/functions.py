@@ -1,11 +1,15 @@
 import yfinance as yf
-from sqlalchemy import Column, Integer, Float, String, DateTime, create_engine, func
+import requests
+from bs4 import BeautifulSoup
+
 from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import create_engine, func
+
 from datetime import datetime
 from typing import Optional
 
-# Define a base ORM
-Base = declarative_base()
+from toolbox.table import Acao
+
 
 # Configurações do banco de dados
 DATABASE_URL = 'sqlite:///banco_acoes.db'
@@ -13,22 +17,6 @@ engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 Base = declarative_base()
 session = SessionLocal()
-
-#Modelo da tabela.
-class Acao(Base):
-    __tablename__ = 'acoes'
-
-    id = Column(Integer, primary_key = True)
-    ticker = Column(String, nullable = False)
-    quantidade = Column(Integer, nullable = False)
-    investido = Column(Float, nullable = False)
-    data_adicao = Column(DateTime, default = datetime.utcnow)
-
-    def __repr__(self):
-        return f"<Acao(ticker='{self.ticker}', data_adicao='{self.data_adicao}')>"
-    
-# Criar a tabela (depois de definir o modelo)
-Base.metadata.create_all(bind=engine)
 
 
 def formatar_ticker(ticker: str) -> str:
@@ -50,7 +38,6 @@ def obter_preco_atual(ticker: str) -> float:
         return preco
     except Exception as e:
         return 0.1
-
 
 def inserir_acao(ticker: str, quantidade: int, preco: Optional[float] = None, data:Optional[datetime] = None):
     """Insere uma ação na API, comprada agora ou antes."""
@@ -83,7 +70,6 @@ def inserir_acao(ticker: str, quantidade: int, preco: Optional[float] = None, da
     session.close()
     return response
 
-
 def ver_acoes():
     """Lista os tickers únicos com a quantidade de ocorrências,
     soma das quantidades, valor total investido
@@ -110,7 +96,6 @@ def ver_acoes():
         for ticker, quantidade_total, preco_total, ultima_adicao in resultados
     ]
 
-
 def procurar_acao(ticker: str):
     """Busca uma ação específica
     pelo ticker e retorna um
@@ -128,7 +113,6 @@ def procurar_acao(ticker: str):
     }
     return response
 
-
 def deletar_acao(ticker: str, quantidade: int):
     """Exclui a primeira ocorrência
     de uma ação com o ticker informado."""
@@ -141,3 +125,23 @@ def deletar_acao(ticker: str, quantidade: int):
     session.commit()
     response = (f"Ação '{ticker}' excluída com sucesso.")
     return response
+
+def pesquisar_acao(nome: str, limite: int = 5):
+    """Busca ações por nome no Yahoo Finance"""
+    url = f"https://finance.yahoo.com/lookup?s={nome}"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    
+    response = requests.get(url, headers=headers)
+    soup = BeautifulSoup(response.text, "html.parser")
+    
+    resultados = []
+    linhas = soup.select("table tbody tr")
+
+    for linha in linhas[:limite]:
+        colunas = linha.find_all("td")
+        if len(colunas) >= 2:
+            ticker = colunas[0].text.strip()
+            nome_empresa = colunas[1].text.strip()
+            resultados.append({"ticker": ticker, "nome": nome_empresa})
+    
+    return resultados

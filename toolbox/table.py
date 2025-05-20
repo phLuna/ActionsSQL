@@ -12,10 +12,11 @@ Base = declarative_base()
 class Acao(Base):
     __tablename__ = 'acoes'
 
-    id = Column(Integer, primary_key = True)
-    ticker = Column(String, nullable = False)
-    quantidade = Column(Integer, nullable = False)
-    investido = Column(Float, nullable = False)
+    id          = Column(Integer, primary_key = True)
+    ticker      = Column(String, nullable = False)
+    tipo        = Column(String, nullable = True)
+    quantidade  = Column(Integer, nullable = False)
+    investido   = Column(Float, nullable = False)
     data_adicao = Column(DateTime, default = datetime.utcnow)
 
     def __repr__(self):
@@ -25,8 +26,7 @@ class Acao(Base):
 Base = declarative_base()
 
 # Configurações do banco de dados
-DATABASE_URL = 'sqlite:///banco_acoes.db'
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+engine = create_engine("sqlite:///acoes.db")
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 Base = declarative_base()
 session = SessionLocal()

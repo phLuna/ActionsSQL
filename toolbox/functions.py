@@ -39,18 +39,26 @@ def obter_preco_atual(ticker: str) -> float:
     except Exception as e:
         return 0.1
 
-def inserir_acao(ticker: str, quantidade: int, preco: Optional[float] = None, data:Optional[datetime] = None):
-    """Insere uma ação na API, comprada agora ou antes."""
+def inserir_acao(ticker: str, quantidade: int,  tipo: Optional[str] = None,
+                preco: Optional[float] = None,
+                data: Optional[datetime] = None):
+    """Insere uma ação ou FII. O tipo e o preço são opcionais."""
+
     session = SessionLocal()
 
-    #Obtém os valores monetários.
+    # Obtém o preço atual se não fornecido
     if preco is None:
         preco = obter_preco_atual(ticker)
     valor_investido = round(preco * quantidade, 2)
 
-    #Obtém as datas.
+    # Define data atual se não fornecida
     if data is None:
         data = datetime.utcnow()
+
+    # Define tipo automaticamente se não fornecido
+    if tipo is None:
+        tipo = "fii" if ticker.upper().endswith("11") else "acao"
+
 
     acao_existente = session.query(Acao).filter_by(ticker=ticker).first()
     if acao_existente:
@@ -61,10 +69,12 @@ def inserir_acao(ticker: str, quantidade: int, preco: Optional[float] = None, da
         nova_acao = Acao(
             ticker=ticker,
             quantidade=quantidade,
-            investido=valor_investido
+            investido=valor_investido,
+            tipo=tipo,
+            data_adicao=data
         )
         session.add(nova_acao)
-        response = f"{quantidade} de ações '{ticker}' adicionada(s) com sucesso! Investido: R$ {valor_investido:.2f}"
+        response = f"{quantidade} de '{ticker}' adicionada(s) com sucesso! Investido: R$ {valor_investido:.2f} (tipo: {tipo})"
 
     session.commit()
     session.close()

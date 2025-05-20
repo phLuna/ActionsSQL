@@ -15,12 +15,13 @@ def adicionar_acao(entrada: AcaoInput):
     """Adiciona ações no DB."""
     ticker       =   entrada.ticker
     quantidade   =   entrada.quantidade
+    tipo         =   entrada.tipo
     preco        =   entrada.preco
     data         =   entrada.data
 
     if preco == 0:
         preco = obter_preco_atual(ticker)
-    return inserir_acao(ticker, quantidade, preco, data)
+    return inserir_acao(ticker, quantidade, tipo, preco, data)
 
 #Método para listar todas as ações do DB.
 @app.get("/acoes/")
@@ -37,6 +38,16 @@ def buscar_acao(ticker: str):
         raise HTTPException(status_code=404, detail="Ação não encontrada.")
     return resultado
 
+#Método para pesquisar ações no Yahoo Finance.
+@app.get("/pesquisar-acoes/")
+def pesquisar(nome: str = Query(..., description="Parte do nome da empresa ou ticker."), limite: int = 5):
+    """Busca ações pelo nome ou parte
+    do ticker no Yahoo Finance."""
+    resultados = pesquisar_acao(nome, limite)
+    if not resultados:
+        return {"mensagem": "Nenhum resultado encontrado"}
+    return resultados
+
 #Método para excluir ações do DB.
 @app.delete("/acoes/{ticker}")
 def excluir_acao(ticker: str):
@@ -46,11 +57,3 @@ def excluir_acao(ticker: str):
         raise HTTPException(status_code=404, detail="Ação não encontrada.")
     return {"mensagem": f"Ação '{ticker}' excluída com sucesso."}
 
-@app.get("/pesquisar-acoes/")
-def pesquisar(nome: str = Query(..., description="Parte do nome da empresa ou ticker."), limite: int = 5):
-    """Busca ações pelo nome ou parte
-    do ticker no Yahoo Finance."""
-    resultados = pesquisar_acao(nome, limite)
-    if not resultados:
-        return {"mensagem": "Nenhum resultado encontrado"}
-    return resultados

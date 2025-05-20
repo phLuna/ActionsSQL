@@ -1,12 +1,24 @@
 from toolbox.db import inserir_acao, procurar_acao, ver_acoes, deletar_acao
 from fastapi import FastAPI, HTTPException
+from typing import Optional
+from datetime import datetime
+
+from toolbox.models import AcaoInput
+from toolbox.db import obter_preco_atual
 
 # Rotas
 app = FastAPI()
 
 @app.post("/acoes/")
-def adicionar_acao(ticker: str, quantidade: int):
-    return inserir_acao(ticker, quantidade)
+def adicionar_acao(entrada: AcaoInput):
+    ticker       =   entrada.ticker
+    quantidade   =   entrada.quantidade
+    preco        =   entrada.preco
+    data         =   entrada.data
+
+    if preco == 0:
+        preco = obter_preco_atual(ticker)
+    return inserir_acao(ticker, quantidade, preco, data)
 
 @app.get("/acoes/")
 def listar_acoes():

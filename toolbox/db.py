@@ -2,6 +2,7 @@ import yfinance as yf
 from sqlalchemy import Column, Integer, Float, String, DateTime, create_engine, func
 from sqlalchemy.orm import declarative_base, sessionmaker
 from datetime import datetime
+from typing import Optional
 
 # Define a base ORM
 Base = declarative_base()
@@ -51,10 +52,18 @@ def obter_preco_atual(ticker: str) -> float:
         return 0.1
 
 
-def inserir_acao(ticker: str, quantidade: int):
+def inserir_acao(ticker: str, quantidade: int, preco: Optional[float] = None, data:Optional[datetime] = None):
+    """Insere uma ação na API, comprada agora ou antes."""
     session = SessionLocal()
-    preco = obter_preco_atual(ticker)
+
+    #Obtém os valores monetários.
+    if preco is None:
+        preco = obter_preco_atual(ticker)
     valor_investido = round(preco * quantidade, 2)
+
+    #Obtém as datas.
+    if data is None:
+        data = datetime.utcnow()
 
     acao_existente = session.query(Acao).filter_by(ticker=ticker).first()
     if acao_existente:

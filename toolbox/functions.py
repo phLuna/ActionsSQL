@@ -133,11 +133,16 @@ def procurar_acao(ticker: str):
     acoes = session.query(Acao).filter_by(ticker=ticker).all()
     if not acoes:
         return None
+
     quantidade_total = sum(acao.quantidade for acao in acoes)
+    investido_total = round(sum(acao.investido for acao in acoes), 2)
+    preco_atual = obter_preco_atual(ticker)
+
     response = {
         "Ticker": ticker,
         "Quantidade": quantidade_total,
-        "Preco da unidade": round(obter_preco_atual(ticker), 2),
+        "Investido": investido_total,
+        "Preco da unidade": round(preco_atual, 2) if preco_atual else None,
         "Primeira adição": acoes[0].data_adicao.strftime('%Y-%m-%d %H:%M:%S')
     }
     return response
@@ -178,7 +183,6 @@ def deletar_acao(ticker: str, quantidade: int):
 
     session.commit()
     return f"{excluir} ação(ões) '{ticker}' excluída(s) com sucesso."
-
 
 def pesquisar_acao(nome: str, limite: int = 5):
     """Busca ações por nome no Yahoo Finance"""

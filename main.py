@@ -50,10 +50,10 @@ def pesquisar(nome: str = Query(..., description="Parte do nome da empresa ou ti
 
 #Método para excluir ações do DB.
 @app.delete("/acoes/{ticker}")
-def excluir_acao(ticker: str):
+def excluir_acao(ticker: str, quantidade: int):
     """Exclui uma ação no DB."""
-    sucesso = deletar_acao(ticker)
+    sucesso = deletar_acao(ticker, quantidade)
     if not sucesso:
         raise HTTPException(status_code=404, detail="Ação não encontrada.")
-    return {"mensagem": f"Ação '{ticker}' excluída com sucesso."}
+    return {"mensagem": f"Ação(ões) '{ticker}' excluída(s) com sucesso."}
 

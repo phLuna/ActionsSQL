@@ -20,35 +20,54 @@ session = SessionLocal()
 
 
 def formatar_ticker(ticker: str) -> str:
-    """Formata os tickers das ações
-    para o formato brasileiro, caso forem."""
-    if ticker.endswith(".SA"):
+    """Adequa o ticker fornecido para os
+    demais mercados genéricos do mundo."""
+    ticker = ticker.upper().strip()
+    mercados_internacionais = ['.NS', '.TO', '.L', '.OQ', '.NY', '.HK', '.PA', '.F', '.SS']
+
+    if any(ticker.endswith(sufixo) for sufixo in mercados_internacionais):
+        return ticker
+    if ticker.endswith('.SA'):
         return ticker
     if ticker.isalnum():
-        return ticker + ".SA"
+        if 1 <= len(ticker) <= 5:
+            if any(c.isdigit() for c in ticker):
+                return ticker + '.SA'
+            else:
+                return ticker
+    if ticker.endswith('.SS') or ticker.endswith('.SZ'):
+        return ticker
     return ticker
 
-def obter_preco_atual(ticker: str) -> float:
-    """Consulta na API do Yahoo o
-    preço atual da ação."""
+def obter_preco_atual(ticker: str) -> Optional[float]:
+    """Consulta o preço atual da ação na API do Yahoo Finance."""
     try:
         ticker_formatado = formatar_ticker(ticker)
         acao = yf.Ticker(ticker_formatado)
-        preco = acao.history(period="1d")["Close"].iloc[-1]
-        return preco
+        historico = acao.history(period="1d")
+        if historico.empty:
+            return None  # Não encontrou dados
+        preco = historico["Close"].iloc[-1]
+        return round(preco, 2)
     except Exception as e:
-        return 0.1
+        return None
 
-def inserir_acao(ticker: str, quantidade: int,  tipo: Optional[str] = None,
-                preco: Optional[float] = None,
-                data: Optional[datetime] = None):
+def inserir_acao(ticker:    str, 
+                quantidade: int,  
+                tipo:       Optional[str] = None,
+                preco:      Optional[float] = None,
+                data:       Optional[datetime] = None):
     """Insere uma ação ou FII. O tipo e o preço são opcionais."""
 
+    ticker = ticker.upper()
     session = SessionLocal()
 
     # Obtém o preço atual se não fornecido
     if preco is None:
         preco = obter_preco_atual(ticker)
+    if preco is None or preco <= 0:
+        session.close()
+        return f"Erro: preço da ação '{ticker}' não encontrado ou inválido."
     valor_investido = round(preco * quantidade, 2)
 
     # Define data atual se não fornecida
@@ -56,7 +75,7 @@ def inserir_acao(ticker: str, quantidade: int,  tipo: Optional[str] = None,
         data = datetime.utcnow()
 
     # Define tipo automaticamente se não fornecido
-    if tipo is None:
+    if tipo == 'string':
         tipo = "fii" if ticker.upper().endswith("11") else "acao"
 
 
@@ -67,11 +86,11 @@ def inserir_acao(ticker: str, quantidade: int,  tipo: Optional[str] = None,
         response = f"{quantidade} unidade(s) adicionada(s) à ação '{ticker}' existente. Investido: R$ {valor_investido:.2f}"
     else:
         nova_acao = Acao(
-            ticker=ticker,
-            quantidade=quantidade,
-            investido=valor_investido,
-            tipo=tipo,
-            data_adicao=data
+            ticker      =   ticker,
+            quantidade  =   quantidade,
+            investido   =   valor_investido,
+            tipo        =   tipo,
+            data_adicao =   data
         )
         session.add(nova_acao)
         response = f"{quantidade} de '{ticker}' adicionada(s) com sucesso! Investido: R$ {valor_investido:.2f} (tipo: {tipo})"
@@ -88,7 +107,7 @@ def ver_acoes():
         session.query(
             Acao.ticker,
             func.sum(Acao.quantidade).label("quantidade_total"),
-            func.sum(Acao.quantidade * Acao.investido).label("investimento_total"),
+            func.sum(Acao.investido).label("investimento_total"),
             func.max(Acao.data_adicao).label("ultima_adicao")
         )
         .group_by(Acao.ticker)
@@ -124,17 +143,42 @@ def procurar_acao(ticker: str):
     return response
 
 def deletar_acao(ticker: str, quantidade: int):
-    """Exclui a primeira ocorrência
-    de uma ação com o ticker informado."""
-    acao = session.query(Acao).filter_by(ticker=ticker).first()
-    if acao is None:
-        print(f"Ação '{ticker}' não encontrada.")
-        return False
-    for acao in range(quantidade):
-        session.delete(acao)
+    """Exclui até `quantidade` ocorrências da ação com o ticker informado."""
+
+    acoes = (
+        session.query(Acao)
+        .filter_by(ticker=ticker)
+        .order_by(Acao.data_adicao.asc())
+        .all()
+    )
+
+    if not acoes:
+        return f"Ação '{ticker}' não encontrada no banco de dados."
+
+    total_disponivel = sum(a.quantidade for a in acoes)
+
+    # Ajusta a quantidade para o máximo possível
+    excluir = min(total_disponivel, quantidade)
+
+    restante = excluir
+    for acao in acoes:
+        if restante == 0:
+            break
+
+        if acao.quantidade <= restante:
+            restante -= acao.quantidade
+            session.delete(acao)
+        else:
+            acao.quantidade -= restante
+            acao.investido = round(
+                acao.investido * (acao.quantidade / (acao.quantidade + restante)), 2
+            )
+            restante = 0
+            session.add(acao)
+
     session.commit()
-    response = (f"Ação '{ticker}' excluída com sucesso.")
-    return response
+    return f"{excluir} ação(ões) '{ticker}' excluída(s) com sucesso."
+
 
 def pesquisar_acao(nome: str, limite: int = 5):
     """Busca ações por nome no Yahoo Finance"""

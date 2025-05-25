@@ -200,6 +200,22 @@ def pesquisar_acao(nome: str, limite: int = 5):
         if len(colunas) >= 2:
             ticker = colunas[0].text.strip()
             nome_empresa = colunas[1].text.strip()
-            resultados.append({"ticker": ticker, "nome": nome_empresa})
-    
+            
+            if ticker.endswith("11"):
+                tipo = "fii"
+            elif ticker.endswith(".SA"):
+                tipo = "acao"
+            elif ticker.endswith(".NS") or ticker.endswith(".BO"):
+                tipo = "acao"
+            elif "." in ticker:
+                tipo = "acao"
+            else:
+                tipo = "outro"
+            
+            resultados.append({
+                "ticker": ticker,
+                "nome": nome_empresa,
+                "tipo": tipo
+            })
+
     return resultados

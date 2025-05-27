@@ -23,6 +23,7 @@ def adicionar_acao(entrada: AcaoInput):
     response = inserir_acao(ticker, quantidade, tipo, preco, data)
     return response
 
+#Método para definir metas para as ações no DB.
 @app.post("/metas/")
 def definir_meta(entrada: MetaInput):
     """Adiciona uma meta de quantia de tal ação na carteira."""
@@ -48,6 +49,7 @@ def buscar_acao(ticker: str):
         raise HTTPException(status_code=404, detail="Ação não encontrada.")
     return resultado
 
+#Método para ver todas as metas e compará-las no DB.
 @app.get("/metas/")
 def comparar_metas():
     response = comparar_alocacao()

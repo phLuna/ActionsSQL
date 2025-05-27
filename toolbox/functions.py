@@ -8,7 +8,7 @@ from sqlalchemy import create_engine, func
 from datetime import datetime
 from typing import Optional
 
-from toolbox.table import Acao
+from toolbox.table import Acao, MetaAlocacao
 
 
 # Configurações do banco de dados
@@ -184,6 +184,17 @@ def deletar_acao(ticker: str, quantidade: int):
     session.commit()
     return f"{excluir} ação(ões) '{ticker}' excluída(s) com sucesso."
 
+def deletar_meta(ticker: str) -> bool:
+    """Exclui a meta de alocação pelo ticker.
+    Retorna True se excluiu, False se não encontrou."""
+
+    meta = session.query(MetaAlocacao).filter_by(ticker=ticker).first()
+    if not meta:
+        return False
+    session.delete(meta)
+    session.commit()
+    return True
+
 def pesquisar_acao(nome: str, limite: int = 5):
     """Busca ações por nome no Yahoo Finance"""
     url = f"https://finance.yahoo.com/lookup?s={nome}"
@@ -219,3 +230,38 @@ def pesquisar_acao(nome: str, limite: int = 5):
             })
 
     return resultados
+
+def adicionar_meta(ticker: str, porcentagem: float):
+    acao = session.query(Acao).filter_by(ticker=ticker).first()
+    if not acao:
+        return f'Açao {ticker} não foi encontrada.'
+    
+    meta = session.query(MetaAlocacao).filter_by(ticker=ticker).first()
+    if meta:
+        meta.porcentagem_desejada = porcentagem
+    else:
+        nova_meta = MetaAlocacao(ticker = ticker, porcentagem_desejada = porcentagem)
+        session.add(nova_meta)
+
+    session.commit()
+    return f'Meta de {porcentagem:.1f}% definida para {ticker}'
+
+def comparar_alocacao():
+    acoes = session.query(Acao).all()
+    metas = {m.ticker: m.porcentagem_desejada for m in session.query(MetaAlocacao).all()}
+    total_investido = sum(a.investido for a in acoes)
+
+    relatorio = []
+    for a in acoes:
+        atual = (a.investido / total_investido) * 100 if total_investido else 0
+        desejada = metas.get(a.ticker, 0)
+        diferenca = round(atual - desejada, 2)
+        relatorio.append({
+            "Ticker": a.ticker,
+            "Atual (%)": round(atual, 2),
+            "Desejada (%)": round(desejada, 2),
+            "Diferença (%)": diferenca,
+            "Investido (R$)": round(a.investido, 2)
+        })
+
+    return relatorio

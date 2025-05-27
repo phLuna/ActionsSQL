@@ -1,10 +1,8 @@
 from toolbox.functions import inserir_acao, procurar_acao, ver_acoes, deletar_acao
 from fastapi import FastAPI, HTTPException, Query
-from typing import Optional
-from datetime import datetime
 
-from toolbox.models import AcaoInput
-from toolbox.functions import obter_preco_atual, pesquisar_acao
+from toolbox.models import AcaoInput, MetaInput
+from toolbox.functions import obter_preco_atual, pesquisar_acao, adicionar_meta, comparar_alocacao, deletar_meta
 
 # Rotas
 app = FastAPI()
@@ -13,15 +11,27 @@ app = FastAPI()
 @app.post("/acoes/")
 def adicionar_acao(entrada: AcaoInput):
     """Adiciona ações no DB."""
+
     ticker       =   entrada.ticker
     quantidade   =   entrada.quantidade
     tipo         =   entrada.tipo
     preco        =   entrada.preco
     data         =   entrada.data
 
-    if preco == 0:
+    if not preco or preco <= 0:
         preco = obter_preco_atual(ticker)
-    return inserir_acao(ticker, quantidade, tipo, preco, data)
+    response = inserir_acao(ticker, quantidade, tipo, preco, data)
+    return response
+
+@app.post("/metas/")
+def definir_meta(entrada: MetaInput):
+    """Adiciona uma meta de quantia de tal ação na carteira."""
+
+    ticker = entrada.ticker
+    porcentagem = entrada.porcentagem
+
+    response = adicionar_meta(ticker, porcentagem)
+    return response
 
 #Método para listar todas as ações do DB.
 @app.get("/acoes/")
@@ -38,6 +48,11 @@ def buscar_acao(ticker: str):
         raise HTTPException(status_code=404, detail="Ação não encontrada.")
     return resultado
 
+@app.get("/metas/")
+def comparar_metas():
+    response = comparar_alocacao()
+    return response
+
 #Método para pesquisar ações no Yahoo Finance.
 @app.get("/pesquisar-acoes/")
 def pesquisar(nome: str = Query(..., description="Parte do nome da empresa ou ticker."), limite: int = 5):
@@ -53,7 +68,14 @@ def pesquisar(nome: str = Query(..., description="Parte do nome da empresa ou ti
 def excluir_acao(ticker: str, quantidade: int):
     """Exclui uma ação no DB."""
     sucesso = deletar_acao(ticker, quantidade)
-    if not sucesso:
-        raise HTTPException(status_code=404, detail="Ação não encontrada.")
-    return {"mensagem": f"Ação(ões) '{ticker}' excluída(s) com sucesso."}
+    if sucesso.startswith("Erro") or "não encontrada" in sucesso:
+        raise HTTPException(status_code=404, detail=sucesso)
+    return {"mensagem": sucesso}
 
+#Método para excluir a meta de uma ação no DB.
+@app.delete("/meta-alocacao/{ticker}")
+def excluir_meta(ticker: str):
+    sucesso = deletar_meta(ticker)
+    if not sucesso:
+        raise HTTPException(status_code=404, detail="Meta de alocação não encontrada.")
+    return {"mensagem": f"Meta de alocação para '{ticker}' excluída com sucesso."}

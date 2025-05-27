@@ -11,3 +11,7 @@ class AcaoInput(BaseModel):
 
 class BuscarAcao(BaseModel):
     ticker: str
+
+class MetaInput(BaseModel):
+    ticker:     str
+    porcentagem: float

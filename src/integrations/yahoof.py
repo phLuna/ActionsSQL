@@ -1,0 +1,1 @@
+#Criar objeto do yahoo com módulos das funções.

@@ -1,7 +1,3 @@
-import yfinance as yf
-import requests
-from bs4 import BeautifulSoup
-
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy import create_engine, func
 
@@ -9,6 +5,7 @@ from datetime import datetime
 from typing import Optional
 
 from toolbox.table import Acao, MetaAlocacao
+from src.integrations.yahoof import YahooAPI
 
 
 # Configurações do banco de dados
@@ -17,40 +14,6 @@ engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 Base = declarative_base()
 session = SessionLocal()
-
-
-def formatar_ticker(ticker: str) -> str:
-    """Adequa o ticker fornecido para os
-    demais mercados genéricos do mundo."""
-    ticker = ticker.upper().strip()
-    mercados_internacionais = ['.NS', '.TO', '.L', '.OQ', '.NY', '.HK', '.PA', '.F', '.SS']
-
-    if any(ticker.endswith(sufixo) for sufixo in mercados_internacionais):
-        return ticker
-    if ticker.endswith('.SA'):
-        return ticker
-    if ticker.isalnum():
-        if 1 <= len(ticker) <= 5:
-            if any(c.isdigit() for c in ticker):
-                return ticker + '.SA'
-            else:
-                return ticker
-    if ticker.endswith('.SS') or ticker.endswith('.SZ'):
-        return ticker
-    return ticker
-
-def obter_preco_atual(ticker: str) -> Optional[float]:
-    """Consulta o preço atual da ação na API do Yahoo Finance."""
-    try:
-        ticker_formatado = formatar_ticker(ticker)
-        acao = yf.Ticker(ticker_formatado)
-        historico = acao.history(period="1d")
-        if historico.empty:
-            return None  # Não encontrou dados
-        preco = historico["Close"].iloc[-1]
-        return round(preco, 2)
-    except Exception as e:
-        return None
 
 def inserir_acao(ticker:    str, 
                 quantidade: int,  
@@ -64,7 +27,7 @@ def inserir_acao(ticker:    str,
 
     # Obtém o preço atual se não fornecido
     if preco is None:
-        preco = obter_preco_atual(ticker)
+        preco = YahooAPI.preco_atual(ticker)
     if preco is None or preco <= 0:
         session.close()
         return f"Erro: preço da ação '{ticker}' não encontrado ou inválido."
@@ -136,7 +99,7 @@ def procurar_acao(ticker: str):
 
     quantidade_total = sum(acao.quantidade for acao in acoes)
     investido_total = round(sum(acao.investido for acao in acoes), 2)
-    preco_atual = obter_preco_atual(ticker)
+    preco_atual = YahooAPI.preco_atual(ticker)
 
     response = {
         "Ticker": ticker,
@@ -194,42 +157,6 @@ def deletar_meta(ticker: str) -> bool:
     session.delete(meta)
     session.commit()
     return True
-
-def pesquisar_acao(nome: str, limite: int = 5):
-    """Busca ações por nome no Yahoo Finance"""
-    url = f"https://finance.yahoo.com/lookup?s={nome}"
-    headers = {"User-Agent": "Mozilla/5.0"}
-    
-    response = requests.get(url, headers=headers)
-    soup = BeautifulSoup(response.text, "html.parser")
-    
-    resultados = []
-    linhas = soup.select("table tbody tr")
-
-    for linha in linhas[:limite]:
-        colunas = linha.find_all("td")
-        if len(colunas) >= 2:
-            ticker = colunas[0].text.strip()
-            nome_empresa = colunas[1].text.strip()
-            
-            if ticker.endswith("11"):
-                tipo = "fii"
-            elif ticker.endswith(".SA"):
-                tipo = "acao"
-            elif ticker.endswith(".NS") or ticker.endswith(".BO"):
-                tipo = "acao"
-            elif "." in ticker:
-                tipo = "acao"
-            else:
-                tipo = "outro"
-            
-            resultados.append({
-                "ticker": ticker,
-                "nome": nome_empresa,
-                "tipo": tipo
-            })
-
-    return resultados
 
 def adicionar_meta(ticker: str, porcentagem: float):
     acao = session.query(Acao).filter_by(ticker=ticker).first()

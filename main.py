@@ -2,7 +2,8 @@ from toolbox.functions import inserir_acao, procurar_acao, ver_acoes, deletar_ac
 from fastapi import FastAPI, HTTPException, Query
 
 from toolbox.models import AcaoInput, MetaInput
-from toolbox.functions import obter_preco_atual, pesquisar_acao, adicionar_meta, comparar_alocacao, deletar_meta
+from toolbox.functions import adicionar_meta, comparar_alocacao, deletar_meta
+from src.integrations.yahoof import YahooAPI
 
 # Rotas
 app = FastAPI()
@@ -60,7 +61,7 @@ def comparar_metas():
 def pesquisar(nome: str = Query(..., description="Parte do nome da empresa ou ticker."), limite: int = 5):
     """Busca ações pelo nome ou parte
     do ticker no Yahoo Finance."""
-    resultados = pesquisar_acao(nome, limite)
+    resultados = YahooAPI.pesquisar_acao(nome, limite)
     if not resultados:
         return {"mensagem": "Nenhum resultado encontrado"}
     return resultados

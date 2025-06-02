@@ -6,14 +6,10 @@ from typing import Optional
 
 from toolbox.table import Acao, MetaAlocacao
 from src.integrations.yahoof import YahooAPI
+from src.integrations.sqlalchemy import SQLAlchemy
 
 
-# Configurações do banco de dados
-DATABASE_URL = 'sqlite:///banco_acoes.db'
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-Base = declarative_base()
-session = SessionLocal()
+session = SQLAlchemy.SessionLocal()
 
 def inserir_acao(ticker:    str, 
                 quantidade: int,  
@@ -23,7 +19,7 @@ def inserir_acao(ticker:    str,
     """Insere uma ação ou FII. O tipo e o preço são opcionais."""
 
     ticker = ticker.upper()
-    session = SessionLocal()
+    session = SQLAlchemy.SessionLocal()
 
     # Obtém o preço atual se não fornecido
     if preco is None:

@@ -20,7 +20,7 @@ def adicionar_acao(entrada: AcaoInput):
     data         =   entrada.data
 
     if not preco or preco <= 0:
-        preco = YahooAPI.preco_atual(ticker)
+        preco = obter_preco_atual(ticker)
     response = inserir_acao(ticker, quantidade, tipo, preco, data)
     return response
 

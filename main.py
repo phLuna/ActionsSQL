@@ -3,7 +3,14 @@ from fastapi import FastAPI, HTTPException, Query
 
 from toolbox.models import AcaoInput, MetaInput
 from toolbox.functions import adicionar_meta, comparar_alocacao, deletar_meta
+
+from src.models.base import Base
+
+from src.integrations.sqlalchemy import SQLAlchemy
 from src.integrations.yahoof import YahooAPI
+
+engine = SQLAlchemy.engine  # aqui apenas referencia o engine já criado
+Base.metadata.create_all(bind=engine)
 
 # Rotas
 app = FastAPI()

@@ -1,10 +1,9 @@
-from sqlalchemy.orm import declarative_base, sessionmaker
-from sqlalchemy import create_engine, func
-
 from datetime import datetime
 from typing import Optional
 
-from toolbox.table import Acao, MetaAlocacao
+from src.models.acoes_db import Acao
+from src.models.metas_db import MetaAlocacao
+
 from src.integrations.yahoof import YahooAPI
 from src.integrations.sqlalchemy import SQLAlchemy
 
@@ -65,12 +64,12 @@ def ver_acoes():
     resultados = (
         session.query(
             Acao.ticker,
-            func.sum(Acao.quantidade).label("quantidade_total"),
-            func.sum(Acao.investido).label("investimento_total"),
-            func.max(Acao.data_adicao).label("ultima_adicao")
+            SQLAlchemy.Func.sum(Acao.quantidade).label("quantidade_total"),
+            SQLAlchemy.Func.sum(Acao.investido).label("investimento_total"),
+            SQLAlchemy.Func.max(Acao.data_adicao).label("ultima_adicao")
         )
         .group_by(Acao.ticker)
-        .order_by(func.max(Acao.data_adicao).desc())
+        .order_by(SQLAlchemy.Func.max(Acao.data_adicao).desc())
         .all()
     )
 
@@ -147,7 +146,12 @@ def deletar_meta(ticker: str) -> bool:
     """Exclui a meta de alocação pelo ticker.
     Retorna True se excluiu, False se não encontrou."""
 
-    meta = session.query(MetaAlocacao).filter_by(ticker=ticker).first()
+    meta = (
+    session.query(MetaAlocacao)
+    .join(MetaAlocacao.acao)
+    .filter(Acao.ticker == ticker)
+    .first()
+    )
     if not meta:
         return False
     session.delete(meta)
@@ -157,13 +161,13 @@ def deletar_meta(ticker: str) -> bool:
 def adicionar_meta(ticker: str, porcentagem: float):
     acao = session.query(Acao).filter_by(ticker=ticker).first()
     if not acao:
-        return f'Açao {ticker} não foi encontrada.'
+        return f'Ação {ticker} não foi encontrada.'
     
-    meta = session.query(MetaAlocacao).filter_by(ticker=ticker).first()
+    meta = session.query(MetaAlocacao).filter_by(id_acao=acao.id).first()
     if meta:
-        meta.porcentagem_desejada = porcentagem
+        meta.percentual = porcentagem
     else:
-        nova_meta = MetaAlocacao(ticker = ticker, porcentagem_desejada = porcentagem)
+        nova_meta = MetaAlocacao(id_acao=acao.id, percentual=porcentagem)
         session.add(nova_meta)
 
     session.commit()
@@ -171,7 +175,7 @@ def adicionar_meta(ticker: str, porcentagem: float):
 
 def comparar_alocacao():
     acoes = session.query(Acao).all()
-    metas = {m.ticker: m.porcentagem_desejada for m in session.query(MetaAlocacao).all()}
+    metas = {m.acao.ticker: m.percentual for m in session.query(MetaAlocacao).all()}
     total_investido = sum(a.investido for a in acoes)
 
     relatorio = []

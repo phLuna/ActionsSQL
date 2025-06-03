@@ -13,9 +13,9 @@ app = FastAPI(
     title="API de Carteira de Ações.",
     description="API para controle de ações, metas de alocação e integração com Yahoo Finance.",
     version="1.0.0",
-    docs_url="/docs",  # URL do Swagger
-    redoc_url="/redoc",  # URL do ReDoc (alternativa ao Swagger)
-    openapi_url="/openapi.json"  # Caminho para o schema
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json"
 )
 
 #Método para incluir as rotas de src.rotes.acoes

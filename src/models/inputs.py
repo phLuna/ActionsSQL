@@ -9,7 +9,7 @@ class AcaoInput(BaseModel):
     preco:      Optional[float]     = None
     data:       Optional[datetime]  = None
 
-class BuscarAcao(BaseModel):
+class BuscarAcaoInput(BaseModel):
     ticker: str
 
 class MetaInput(BaseModel):

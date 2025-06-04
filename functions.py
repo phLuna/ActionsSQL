@@ -77,8 +77,8 @@ def ver_acoes():
         {
             "Ticker": ticker,
             "Quantidade": quantidade_total,
-            "Total Investido": round(preco_total, 2) if preco_total is not None else 0.0,
-            "Ultima Adicao": ultima_adicao.strftime('%Y-%m-%d %H:%M:%S')
+            "Total pago": round(preco_total, 2) if preco_total is not None else 0.0,
+            "Ultima adicao": ultima_adicao.strftime('%Y-%m-%d %H:%M:%S')
         }
         for ticker, quantidade_total, preco_total, ultima_adicao in resultados
     ]

@@ -3,10 +3,10 @@ from functions import inserir_acao, ver_acoes, procurar_acao, deletar_acao
 from src.integrations.yahoof import YahooAPI
 from src.models.inputs import AcaoInput
 
-router = APIRouter()
+router = APIRouter(prefix='/acoes', tags=['Ações'])
 
 #Método para enviar ações.
-@router.post('/acoes/', tags=['Ações'])
+@router.post('')
 def adicionar_acao(entrada: AcaoInput):
     """Adiciona ações no DB."""
 
@@ -22,13 +22,13 @@ def adicionar_acao(entrada: AcaoInput):
     return response
 
 #Método para listar todas as ações do DB.
-@router.get('/acoes/', tags=['Ações'])
+@router.get('')
 def listar_acoes():
     """Exibe todas as ações no DB."""
     return ver_acoes()
 
 #Método para pesquisar suas ações no DB.
-@router.get('/acoes/{ticker}', tags=['Ações'])
+@router.get('/{ticker}',)
 def buscar_acao(ticker: str):
     """Busca uma ação específica no DB."""
     resultado = procurar_acao(ticker)
@@ -37,7 +37,7 @@ def buscar_acao(ticker: str):
     return resultado
 
 #Método para pesquisar ações no Yahoo Finance.
-@router.get('/pesquisar-acoes/', tags=['Ações'])
+@router.get('/pesquisar-acoes',)
 def pesquisar(nome: str = Query(..., description="Parte do nome da empresa ou ticker."), limite: int = 5):
     """Busca ações pelo nome ou parte
     do ticker no Yahoo Finance."""
@@ -47,7 +47,7 @@ def pesquisar(nome: str = Query(..., description="Parte do nome da empresa ou ti
     return resultados
 
 #Método para excluir ações do DB.
-@router.delete('/acoes/{ticker}', tags=['Ações'])
+@router.delete('/{ticker}',)
 def excluir_acao(ticker: str, quantidade: int):
     """Exclui uma ação no DB."""
     sucesso = deletar_acao(ticker, quantidade)

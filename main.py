@@ -14,7 +14,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="API de Carteira de Ações.",
-    description="API para controle de ações, metas de alocação e integração com Yahoo Finance.",
+    description="API para controle de investimentos, metas de alocação e integração com Yahoo Finance.",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",

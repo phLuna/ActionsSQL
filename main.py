@@ -5,6 +5,7 @@ from src.models.base import Base
 
 from src.rotes.acoes import router as acoes_router
 from src.rotes.metas import router as metas_router
+from src.rotes.auth import router as auth_router
 
 engine = SQLAlchemy.engine  # aqui apenas referencia o engine já criado
 Base.metadata.create_all(bind=engine)
@@ -18,6 +19,7 @@ app = FastAPI(
     openapi_url="/openapi.json"
 )
 
-#Método para incluir as rotas de src.rotes.acoes
+#Método para incluir as rotas de src.rotes
+app.include_router(auth_router)
 app.include_router(acoes_router)
 app.include_router(metas_router)

@@ -8,3 +8,10 @@ class SQLAlchemy:
     Base = declarative_base()
     session = SessionLocal()
     Func = func
+
+def get_db():
+    db = SQLAlchemy.SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

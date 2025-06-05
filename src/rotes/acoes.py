@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 from functions import inserir_acao, ver_acoes, procurar_acao, deletar_acao
 from src.integrations.yahoof import YahooAPI
-from src.models.inputs import AcaoInput
+from src.models.schemas import AcaoInput
 
 router = APIRouter(prefix='/acoes', tags=['Ações'])
 

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from src.models.acoes_db import Acao
+from src.models.actions import Acao
 from src.models.metas_db import MetaAlocacao
 
 from src.integrations.yahoof import YahooAPI

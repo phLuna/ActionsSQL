@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 
 from functions import adicionar_meta, deletar_meta, comparar_alocacao
 
-from src.models.inputs import MetaInput
+from src.models.schemas import MetaInput
 
 router = APIRouter(prefix='/metas', tags=['Metas'])
 

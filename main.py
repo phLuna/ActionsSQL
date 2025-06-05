@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 
+import uvicorn
+
 from src.integrations.sqlalchemy import SQLAlchemy
 from src.models.base import Base
 
@@ -7,7 +9,7 @@ from src.rotes.acoes import router as acoes_router
 from src.rotes.metas import router as metas_router
 from src.rotes.auth import router as auth_router
 
-engine = SQLAlchemy.engine  # aqui apenas referencia o engine já criado
+engine = SQLAlchemy.engine
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -23,3 +25,10 @@ app = FastAPI(
 app.include_router(auth_router)
 app.include_router(acoes_router)
 app.include_router(metas_router)
+
+if __name__ == '__main__':
+    uvicorn.run(
+        app=app,
+        host='127.0.0.1',
+        port=8000
+    )

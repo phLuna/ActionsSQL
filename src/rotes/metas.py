@@ -18,7 +18,7 @@ def definir_meta(entrada: MetaInput):
     return response
 
 #Método para excluir a meta de uma ação no DB.
-@router.delete("{ticker}")
+@router.delete("/{ticker}")
 def excluir_meta(ticker: str):
     sucesso = deletar_meta(ticker)
     if not sucesso:

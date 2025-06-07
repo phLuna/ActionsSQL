@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from src.integrations.criptography import Auth
 from src.integrations.sqlalchemy import get_db
 from src.models.schemas import UserLogin, CreateUser
-from src.models.users import User
+from src.models.db_users import User
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
 

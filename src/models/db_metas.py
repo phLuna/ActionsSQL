@@ -3,10 +3,10 @@ from sqlalchemy.orm import relationship
 from src.models.base import Base  # importa o mesmo Base
 
 class MetaAlocacao(Base):
-    __tablename__ = 'meta_alocacao'
+    __tablename__ = 'metas'
 
     id = Column(Integer, primary_key=True)
-    id_acao = Column(Integer, ForeignKey('banco_acoes.id'), nullable=False)
+    id_acao = Column(Integer, ForeignKey('acoes.id'), nullable=False)
     percentual = Column(Float, nullable=False)
 
     acao = relationship('Acao', back_populates='meta')

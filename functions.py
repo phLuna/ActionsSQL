@@ -1,8 +1,8 @@
 from datetime import datetime
 from typing import Optional
 
-from src.models.actions import Acao
-from src.models.metas_db import MetaAlocacao
+from src.models.db_actions import Acao
+from src.models.db_metas import MetaAlocacao
 
 from src.integrations.yahoof import YahooAPI
 from src.integrations.sqlalchemy import SQLAlchemy

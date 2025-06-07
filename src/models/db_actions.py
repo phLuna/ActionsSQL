@@ -5,7 +5,7 @@ from datetime import datetime
 from src.models.base import Base  # importa o mesmo Base
 
 class Acao(Base):
-    __tablename__ = 'banco_acoes'
+    __tablename__ = 'acoes'
 
     id = Column(Integer, primary_key=True)
     ticker = Column(String, nullable=False)

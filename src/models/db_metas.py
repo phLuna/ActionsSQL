@@ -6,7 +6,7 @@ class MetaAlocacao(Base):
     __tablename__ = 'metas'
 
     id = Column(Integer, primary_key=True)
-    id_acao = Column(Integer, ForeignKey('acoes.id'), nullable=False)
+    id_acao = Column(Integer, ForeignKey('acoes.id', ondelete='CASCADE'), nullable=False, unique=True)
     percentual = Column(Float, nullable=False)
 
     acao = relationship('Acao', back_populates='meta')

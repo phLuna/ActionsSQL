@@ -46,9 +46,9 @@ def inserir_acao(ticker:    str,
         nova_acao = Acao(
             ticker      =   ticker,
             quantidade  =   quantidade,
-            investido   =   valor_investido,
+            total_pago   =   valor_investido,
             tipo        =   tipo,
-            data_adicao =   data
+            ultima_adicao =   data
         )
         session.add(nova_acao)
         response = f"{quantidade} de '{ticker}' adicionada(s) com sucesso! Investido: R$ {valor_investido:.2f} (tipo: {tipo})"

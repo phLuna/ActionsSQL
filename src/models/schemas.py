@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
 
@@ -17,10 +17,10 @@ class MetaInput(BaseModel):
     porcentagem: float
 
 class CreateUser(BaseModel):
-    nome: str
+    nome: str = Field(..., min_length=2, max_length=100)
     email: EmailStr
-    senha: str
+    senha: str = Field(..., min_length=6, max_length=128)
 
 class UserLogin(BaseModel):
     email: EmailStr
-    senha: str
+    senha: str = Field(..., min_length=6, max_length=128)

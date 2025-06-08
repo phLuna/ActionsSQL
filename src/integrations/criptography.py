@@ -1,11 +1,18 @@
 from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
-
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 import os
 
+from src.integrations.sqlalchemy import get_db
+from src.models.db_users import User
+
 load_dotenv()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 class Auth:
     SECRET_KEY = os.getenv("SECRET_KEY") or "chave-fallback-insegura"
@@ -32,3 +39,23 @@ class Auth:
             return payload
         except JWTError:
             return None
+
+    def get_current_user(self, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+        cred_exception = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido ou ausente.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        payload = self.verificar_token(token)
+        if payload is None:
+            raise cred_exception
+
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise cred_exception
+
+        user = db.query(User).filter(User.id == int(user_id)).first()
+        if user is None:
+            raise cred_exception
+
+        return user

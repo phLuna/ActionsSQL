@@ -21,7 +21,7 @@ def login(dados: UserLogin, db: Session = Depends(get_db)):
             detail="Credenciais inválidas"
         )
 
-    token = auth_service.criar_token({"sub": usuario.email})
+    token = auth_service.criar_token({"sub": str(usuario.id)})
     return {"access_token": token, "token_type": "bearer"}
 
 @router.post("/registro")

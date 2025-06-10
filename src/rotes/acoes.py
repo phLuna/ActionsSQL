@@ -1,24 +1,33 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Depends, Query
+
 from functions import inserir_acao, ver_acoes, procurar_acao, deletar_acao
+
 from src.integrations.yahoof import YahooAPI
+from src.integrations.criptography import Auth
+
+from src.models.db_users import User
 from src.models.schemas import AcaoInput
 
 router = APIRouter(prefix='/acoes', tags=['Ações'])
 
-#Método para enviar ações.
+# Método para enviar ações.
 @router.post('')
-def adicionar_acao(entrada: AcaoInput):
+def adicionar_acao(
+    entrada: AcaoInput,
+    usuario: User = Depends(Auth.get_current_user)
+):
     """Adiciona ações no DB."""
-
-    ticker       =   entrada.ticker
-    quantidade   =   entrada.quantidade
-    tipo         =   entrada.tipo
-    preco        =   entrada.preco
-    data         =   entrada.data
+    ticker       = entrada.ticker
+    quantidade   = entrada.quantidade
+    tipo         = entrada.tipo
+    preco        = entrada.preco
+    data         = entrada.data
 
     if not preco or preco <= 0:
         preco = YahooAPI.preco_atual(ticker)
-    response = inserir_acao(ticker, quantidade, tipo, preco, data)
+    
+    # Passa o usuário para a função de inserção
+    response = inserir_acao(ticker, quantidade, tipo, preco, data, usuario)
     return response
 
 #Método para listar todas as ações do DB.

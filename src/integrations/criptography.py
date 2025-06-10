@@ -2,7 +2,7 @@ from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 import os
@@ -12,7 +12,7 @@ from src.models.db_users import User
 
 load_dotenv()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = HTTPBearer()
 
 class Auth:
     SECRET_KEY = os.getenv("SECRET_KEY") or "chave-fallback-insegura"
@@ -46,7 +46,7 @@ class Auth:
             detail="Token inválido ou ausente.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-        payload = self.verificar_token(token)
+        payload = self.verificar_token(token.credentials)
         if payload is None:
             raise cred_exception
 
